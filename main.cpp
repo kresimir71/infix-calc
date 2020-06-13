@@ -2,6 +2,7 @@
   This file is part of infix-calc:
   Infix calculator written in C++ using flex and bison. 
   Copyright (C) 2013 nikagra <nikagra@gmail.com>
+  Copyright (C) 2020 K.Karamazen <karamazen@abec.info>
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -17,34 +18,46 @@
   along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
-extern int yyparse();
-extern FILE* yyin;
+#include <iostream>
+#include "global.h"
+#include "translator.hpp"  
+#include "tokens.h"
 
 int main(int argc, char **argv)
 {
-        ++argv; --argc;
-        if (argc == 0)
-        {
-                yyin = stdin;
-                yyparse();
-        } 
-        else 
-                while (argc-- > 0)
-                {
-                        yyin = fopen(argv[0], "r");
-                        if (!yyin)
-                        {
-                                printf("Can't open file %s", argv[0]);
-                                return 1;
-                        }
-                        yyparse();
-                        ++argv;
-                }
-        return 0;
+
+  ++argv; --argc;
+  if (argc == 0)
+    {
+      yyscan_t scanner;
+
+      _yy(lex_init)( &scanner );
+      _yy(set_in)( stdin, scanner );
+      _yy(parse)(scanner);
+      _yy(lex_destroy)( scanner );
+    } 
+  else 
+    while (argc-- > 0)
+      {
+	yyscan_t scanner;
+
+	_yy(lex_init)( &scanner );
+	FILE* yyin1 = fopen(argv[0], "r");
+	if (!yyin1)
+	  {
+	    printf("Can't open file %s", argv[0]);
+	    return 1;
+	  }
+	_yy(set_in)( yyin1 ,scanner );
+	_yy(parse)(scanner);
+	_yy(lex_destroy)( scanner );
+	++argv;
+      }
+  return 0;
 }
 
-void yyerror(const char *s)
+void _yy(error)(YYLTYPE* l, yyscan_t scanner,const char *s)
 {
-        printf("ERROR: %s\n", s);
+  std::cout<<"ERROR: " << s << "\n";
+  printf("LINES %d-%d, COLUMNS %d-%d\n", l->first_line, l->last_line, l->first_column, l->last_column);	
 }

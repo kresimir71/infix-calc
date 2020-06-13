@@ -3,7 +3,8 @@
       This file is part of rpn-calc:
       Reverse Polish notation (RPN) calculator written in C++ using flex and bison. 
       Copyright (C) 2013 nikagra <nikagra@gmail.com>
-        
+      Copyright (C) 2020 K.Karamazen <karamazen@abec.info>        
+
       This program is free software: you can redistribute it and/or modify
       it under the terms of the GNU General Public License as published by
       the Free Software Foundation, either version 3 of the License, or
@@ -18,12 +19,24 @@
       along with this program. If not, see <http://www.gnu.org/licenses/>.
     */
 
-    #include <stdio.h>
+    #include <iostream>
     #include <math.h>
     #include "global.h"
-    extern void yyerror(char const *);
-    extern int yylex(void);
+    #include "translator.hpp"  
+    #include "tokens.h"
+
+    extern void yyerror(YYLTYPE*, yyscan_t scanner, char const *);  
 %}
+
+%glr-parser
+%define api.pure true  /* 'true' because 'full' conflicts with glr-parser */
+
+%define api.prefix {y20infixcalc_}
+
+%locations  /* line and culumn numbers are calculated also internally in the parser, see 3.5.3 Default Action for Locations */
+
+%lex-param { yyscan_t scanner }
+%parse-param { yyscan_t scanner }
 
 %token NUMBER LBRACE RBRACE EOL
 %left PLUS MINUS 
@@ -42,7 +55,7 @@ input:
  
 line:
       EOL
-    | expr EOL      { printf(" = %g\n", $$); }
+      | expr EOL      { std::cout << " = " << $$ << "\n"; }
     | error EOL
     ;
      
@@ -57,3 +70,4 @@ expr:
     | LBRACE expr RBRACE    { $$ = $2; }
     ;
 %%
+
